@@ -17,6 +17,9 @@ def main():
     parser.add_argument("--save", action="store_true", help="Flag to save output as output.mp4")
     args = parser.parse_args()
 
+    print("🔴 Living objects → Red boxes")
+    print("⬜ Non-living objects → Gray boxes")
+    print("🎯 Detecting all 80 COCO classes...")
     print("🚀 Initializing system...")
 
     # Determine source (int for webcam, str for file)
@@ -53,6 +56,7 @@ def main():
     
     id_to_class = {}
     id_to_conf = {}
+    id_to_living = {}
 
     # AIML Concept: Real-time frame processing pipeline
     # We continually fetch frames, run the model inference, update the tracker, and render the output.
@@ -65,8 +69,8 @@ def main():
         # 1. Detect objects
         detections = detector.detect(frame)
         
-        # Helper to map bboxes back to classes and confidence
-        bbox_map = {tuple(d["bbox"]): (d["class_name"], d["confidence"]) for d in detections}
+        # Helper to map bboxes back to classes, confidence, and is_living
+        bbox_map = {tuple(d["bbox"]): (d["class_name"], d["confidence"], d["is_living"]) for d in detections}
 
         # 2. Update tracker
         tracked_objects = tracker.update(detections)
@@ -78,20 +82,26 @@ def main():
             if b in bbox_map:
                 id_to_class[obj_id] = bbox_map[b][0]
                 id_to_conf[obj_id] = bbox_map[b][1]
+                id_to_living[obj_id] = bbox_map[b][2]
 
         # 3. Calculate statistics
-        object_count_dict = defaultdict(int)
+        living_counts = defaultdict(int)
+        nonliving_counts = defaultdict(int)
         for obj_id in tracked_objects.keys():
             if obj_id in id_to_class:
-                object_count_dict[id_to_class[obj_id]] += 1
+                cls_name = id_to_class[obj_id]
+                if id_to_living.get(obj_id, False):
+                    living_counts[cls_name] += 1
+                else:
+                    nonliving_counts[cls_name] += 1
 
         # 4. Draw visualizations
-        utils.draw_detections(frame, tracked_objects, id_to_class, id_to_conf)
+        utils.draw_detections(frame, tracked_objects, id_to_class, id_to_conf, id_to_living)
         
         fps, prev_time = utils.calculate_fps(prev_time)
         utils.draw_fps(frame, fps)
         
-        utils.draw_stats(frame, object_count_dict)
+        utils.draw_stats(frame, living_counts, nonliving_counts)
 
         # Save frame if requested
         if args.save and out is not None:
