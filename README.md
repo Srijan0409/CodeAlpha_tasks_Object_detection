@@ -37,6 +37,37 @@ The primary goal of this system is to detect objects in real-time video feeds an
    ```
 2. Ensure the video source is correctly set in the script (e.g. webcam or video file).
 
+**Key Components:
+detector.py - YOLOv8-based object detection module that:
+
+Loads pretrained YOLOv8 model
+Detects objects from frames with configurable confidence threshold
+Classifies objects as "living" or "non-living" (people, animals vs objects)
+Uses CNN backbone and anchor-free detection
+tracker.py - Custom centroid-based tracking module that:
+
+Maintains unique IDs for detected objects
+Associates detections across frames using Euclidean distance
+Handles object registration and deregistration
+Tracks up to 80 COCO classes
+main.py - Main entry point featuring:
+
+Real-time video processing pipeline
+Support for webcam or video file input
+Live FPS counter and statistics display
+Optional video output saving
+Color-coded visualization (Red for living objects, Gray for non-living)
+utils.py - Visualization utilities:
+
+Drawing rounded bounding boxes with tracking IDs
+FPS calculation and display
+Statistics panel showing object counts by class
+requirements.txt - Dependencies:
+
+ultralytics==8.0.196 (YOLOv8)
+opencv-python==4.8.1.78
+numpy==1.24.3**
+
 ## Contributing
 
 Contributions are welcome! Please create a pull request for any changes or enhancements.
