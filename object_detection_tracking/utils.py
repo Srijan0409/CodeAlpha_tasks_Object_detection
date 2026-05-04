@@ -81,30 +81,179 @@ def draw_fps(frame: np.ndarray, fps: float):
     """
     cv2.putText(frame, f"FPS: {int(fps)}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-def draw_stats(frame: np.ndarray, living_counts: Dict[str, int], nonliving_counts: Dict[str, int]):
+def draw_hud_panel(frame: np.ndarray, living_count: int, nonliving_count: int, fps: float, session_seconds: int) -> np.ndarray:
     """
-    Draws a small panel bottom-left showing count per class.
+    Draws a semi-transparent black panel in the bottom-left corner showing live stats.
+    
+    Args:
+        frame: OpenCV image/frame.
+        living_count: Total count of living objects.
+        nonliving_count: Total count of non-living objects.
+        fps: Current frames per second.
+        session_seconds: Elapsed session time in seconds.
+        
+    Returns:
+        Modified OpenCV image/frame.
+    """
+    h, w = frame.shape[:2]
+    overlay = frame.copy()
+    
+    x1, y1 = 10, h - 120
+    x2, y2 = x1 + 220, y1 + 110
+    
+    cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.45, frame, 0.55, 0, frame)
+    
+    text_x = x1 + 10
+    start_y = y1 + 20
+    
+    cv2.putText(frame, "LIVE STATS", (text_x, start_y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1)
+    
+    start_y += 18
+    cv2.circle(frame, (text_x + 5, start_y - 4), 5, (0, 0, 220), -1)
+    cv2.putText(frame, f"Living: {living_count}", (text_x + 15, start_y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
+    
+    start_y += 18
+    cv2.circle(frame, (text_x + 5, start_y - 4), 5, (160, 160, 160), -1)
+    cv2.putText(frame, f"Non-living: {nonliving_count}", (text_x + 15, start_y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1)
+    
+    start_y += 18
+    cv2.putText(frame, f"FPS: {fps:.1f}", (text_x, start_y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
+    
+    start_y += 18
+    cv2.putText(frame, f"Session: {session_seconds}s", (text_x, start_y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (150, 150, 150), 1)
+    
+    return frame
+
+def draw_fps_counter(frame: np.ndarray, fps: float) -> np.ndarray:
+    """
+    Draws an FPS counter in the top-right corner with a background rectangle.
+    
+    Args:
+        frame: OpenCV image/frame.
+        fps: Current frames per second.
+        
+    Returns:
+        Modified OpenCV image/frame.
+    """
+    if fps >= 20:
+        color = (0, 200, 0)
+    elif fps >= 10:
+        color = (0, 200, 200)
+    else:
+        color = (0, 0, 200)
+        
+    if fps == 0:
+        text = "FPS --"
+    else:
+        text = f"FPS {fps:.0f}"
+        
+    (text_width, text_height), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+    h, w = frame.shape[:2]
+    x = w - text_width - 10
+    y = 30
+    
+    cv2.rectangle(frame, (x - 5, y - text_height - 5), (x + text_width + 5, y + 5), (40, 40, 40), -1)
+    cv2.putText(frame, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+    
+    return frame
+
+def draw_session_timer(frame: np.ndarray, start_time: float) -> np.ndarray:
+    """
+    Draws the elapsed session time in the top-left corner.
+    
+    Args:
+        frame: OpenCV image/frame.
+        start_time: Session start time.
+        
+    Returns:
+        Modified OpenCV image/frame.
+    """
+    elapsed = int(time.time() - start_time)
+    mins, secs = divmod(elapsed, 60)
+    text = f"REC  {mins:02d}:{secs:02d}"
+    
+    x, y = 10, 30
+    cv2.circle(frame, (x + 5, y - 5), 5, (0, 0, 220), -1)
+    cv2.putText(frame, text, (x + 15, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
+    
+    return frame
+
+def draw_alert_border(frame: np.ndarray, triggered: bool) -> np.ndarray:
+    """
+    Draws a border around the entire frame, turning red when triggered.
+    
+    Args:
+        frame: OpenCV image/frame.
+        triggered: Boolean indicating if alert is triggered.
+        
+    Returns:
+        Modified OpenCV image/frame.
+    """
+    h, w = frame.shape[:2]
+    if triggered:
+        cv2.rectangle(frame, (0, 0), (w, h), (0, 0, 220), 4)
+    else:
+        cv2.rectangle(frame, (0, 0), (w, h), (40, 40, 40), 1)
+        
+    return frame
+
+def draw_class_legend(frame: np.ndarray) -> np.ndarray:
+    """
+    Draws a static legend in the top-center of the frame showing Living vs Non-living colors.
+    
+    Args:
+        frame: OpenCV image/frame.
+        
+    Returns:
+        Modified OpenCV image/frame.
+    """
+    h, w = frame.shape[:2]
+    text1 = "Living"
+    text2 = "Non-living"
+    
+    (tw1, _), _ = cv2.getTextSize(text1, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+    (tw2, _), _ = cv2.getTextSize(text2, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+    
+    total_width = 10 + 10 + tw1 + 20 + 10 + tw2 + 10
+    x_start = (w - total_width) // 2
+    y_start = 10
+    height = 25
+    
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (x_start, y_start), (x_start + total_width, y_start + height), (0, 0, 0), -1)
+    cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
+    
+    y_text = y_start + 17
+    y_circle = y_start + 12
+    
+    cx1 = x_start + 15
+    tx1 = cx1 + 10
+    cx2 = tx1 + tw1 + 25
+    tx2 = cx2 + 10
+    
+    cv2.circle(frame, (cx1, y_circle), 5, (0, 0, 220), -1)
+    cv2.putText(frame, text1, (tx1, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    
+    cv2.circle(frame, (cx2, y_circle), 5, (160, 160, 160), -1)
+    cv2.putText(frame, text2, (tx2, y_text), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+    
+    return frame
+
+def draw_stats(frame: np.ndarray, living_counts: Dict[str, int], nonliving_counts: Dict[str, int], fps: float = 0.0, session_seconds: int = 0) -> np.ndarray:
+    """
+    Draws the upgraded HUD panel using the provided statistics.
     
     Args:
         frame: OpenCV image/frame.
         living_counts: Dictionary mapping living class names to counts.
         nonliving_counts: Dictionary mapping non-living class names to counts.
+        fps: Current frames per second.
+        session_seconds: Elapsed session time in seconds.
+        
+    Returns:
+        Modified OpenCV image/frame.
     """
-    h, w = frame.shape[:2]
-    
-    living_text = "🔴 Living  →  " + "  ".join([f"{k.capitalize()}s: {v}" for k, v in living_counts.items() if v > 0])
-    if not living_counts:
-        living_text = "🔴 Living  →  None"
-        
-    nonliving_text = "⬜ Non-living  →  " + "  ".join([f"{k.capitalize()}s: {v}" for k, v in nonliving_counts.items() if v > 0])
-    if not nonliving_counts:
-        nonliving_text = "⬜ Non-living  →  None"
-        
-    # Draw semi-transparent background panel
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (10, h - 70), (w - 10, h - 10), (0, 0, 0), -1)
-    cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
-    
-    # Draw text (red for living, gray for non-living)
-    cv2.putText(frame, living_text, (20, h - 45), cv2.FONT_HERSHEY_SIMPLEX, 0.6, LIVING_COLOR, 1)
-    cv2.putText(frame, nonliving_text, (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, NONLIVING_COLOR, 1)
+    living_count = sum(living_counts.values())
+    nonliving_count = sum(nonliving_counts.values())
+    return draw_hud_panel(frame, living_count, nonliving_count, fps, session_seconds)
