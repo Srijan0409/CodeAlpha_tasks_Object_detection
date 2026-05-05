@@ -6,6 +6,7 @@ This module handles loading the pretrained YOLOv8 model and running inference.
 from ultralytics import YOLO
 from typing import List, Dict, Any
 import numpy as np
+from config import CFG
 
 # New - detect everything, classify as living or non-living
 LIVING_CLASSES = [
@@ -18,7 +19,7 @@ class Detector:
     Wrapper class for YOLOv8 object detection.
     Filters detections by confidence and specific classes.
     """
-    def __init__(self, model_path: str = 'yolov8n.pt', conf_threshold: float = 0.5):
+    def __init__(self, model_path: str = CFG.model_path, conf_threshold: float = CFG.confidence):
         """
         Initializes the YOLOv8 detector.
         
