@@ -6,9 +6,10 @@ import cv2
 import time
 import numpy as np
 from typing import Dict, Tuple, List, Any
+from config import CFG
 
-LIVING_COLOR = (0, 0, 220)    # Red   in BGR (OpenCV format)
-NONLIVING_COLOR = (160, 160, 160) # Gray  in BGR
+LIVING_COLOR = CFG.living_color    # Red   in BGR (OpenCV format)
+NONLIVING_COLOR = CFG.nonliving_color # Gray  in BGR
 
 def draw_rounded_rect(img, pt1, pt2, color, thickness, r, d):
     """Draws a rectangle with rounded corners."""
