@@ -1,0 +1,9 @@
+ultralytics>=8.0.196
+opencv-python>=4.8.1.78
+numpy>=1.24.3
+streamlit>=1.32.0
+Pillow>=10.2.0
+plotly>=5.18.0
+pandas>=2.0.0
+PyYAML==6.0.1
+pyttsx3==2.90

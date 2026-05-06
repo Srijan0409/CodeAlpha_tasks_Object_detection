@@ -1,0 +1,27 @@
+detection:
+  confidence_threshold: 0.5
+  skip_frames: 2
+  model_path: "yolov8n.pt"
+  allowed_source: 0
+
+tracking:
+  max_disappeared: 30
+  distance_threshold: 100
+
+display:
+  living_color_bgr: [0, 0, 220]
+  nonliving_color_bgr: [160, 160, 160]
+  label_text_color: [255, 255, 255]
+  fps_display: true
+  show_trails: true
+  trail_length: 30
+
+recording:
+  auto_save_threshold: 10
+  record_on_start: false
+  output_fps: 20
+
+alerts:
+  voice_enabled: false
+  voice_cooldown_seconds: 3
+  zone_alert_enabled: false
