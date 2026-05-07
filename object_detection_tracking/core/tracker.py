@@ -6,7 +6,7 @@ Tracks objects across frames by associating their center points.
 import numpy as np
 from typing import List, Dict, Tuple, Any
 from collections import OrderedDict, deque, defaultdict
-from config import CFG
+from core.config import CFG
 
 class CentroidTracker:
     """
