@@ -1,8 +1,8 @@
 import csv
+import datetime
 import os
 import time
-import datetime
-from typing import Dict, List, Optional
+from typing import Dict, Any
 
 class DetectionLogger:
     """
@@ -13,6 +13,12 @@ class DetectionLogger:
     
     The CSV is written incrementally (one row per detection per frame) so data
     is not lost if the program crashes before session ends.
+    
+    Attributes:
+        COLUMNS (List[str]): The column headers for the CSV file.
+        filepath (str): The absolute or relative path to the output CSV file.
+        row_count (int): The total number of rows logged in the current session.
+        session_start (float): The timestamp when the logger was initialized.
     """
     
     COLUMNS = [
@@ -22,6 +28,12 @@ class DetectionLogger:
     ]
     
     def __init__(self, output_dir: str = "logs"):
+        """
+        Initializes the DetectionLogger and creates the CSV file with headers.
+        
+        Args:
+            output_dir (str): The directory where the log file will be saved.
+        """
         os.makedirs(output_dir, exist_ok=True)
         session_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.filepath = os.path.join(output_dir, f"session_{session_ts}.csv")
@@ -35,9 +47,16 @@ class DetectionLogger:
         self.session_start = time.time()
         print(f"Detection log started: {self.filepath}")
     
-    def log_frame(self, frame_num: int, tracked_objects: Dict, id_to_class: Dict, id_to_conf: Dict, id_to_living: Dict):
+    def log_frame(self, frame_num: int, tracked_objects: Dict[int, Any], id_to_class: Dict[int, str], id_to_conf: Dict[int, float], id_to_living: Dict[int, bool]) -> None:
         """
-        Log all tracked objects from a single frame.
+        Logs all tracked objects from a single frame to the CSV file.
+        
+        Args:
+            frame_num (int): The sequential number of the current frame.
+            tracked_objects (Dict[int, Any]): Dictionary mapping tracking IDs to (centroid_x, centroid_y, bounding_box).
+            id_to_class (Dict[int, str]): Dictionary mapping tracking IDs to class labels.
+            id_to_conf (Dict[int, float]): Dictionary mapping tracking IDs to confidence scores.
+            id_to_living (Dict[int, bool]): Dictionary mapping tracking IDs to a living/non-living boolean flag.
         """
         ts = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
         
@@ -65,8 +84,10 @@ class DetectionLogger:
         if self.row_count % 100 == 0:
             self._file.flush()
     
-    def close(self):
-        """Close the CSV file and print session summary."""
+    def close(self) -> None:
+        """
+        Closes the CSV file safely and prints a summary of the session to the console.
+        """
         self._file.flush()
         self._file.close()
         duration = round(time.time() - self.session_start, 1)
@@ -74,8 +95,13 @@ class DetectionLogger:
         print(f"Total rows logged: {self.row_count} over {duration}s")
         print(f"Open in Excel or pandas: pd.read_csv('{self.filepath}')")
     
-    def get_stats(self) -> Dict:
-        """Return current session stats without closing the logger."""
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Retrieves the current logging statistics without closing the logger.
+        
+        Returns:
+            Dict[str, Any]: A dictionary containing 'rows_logged', 'filepath', and 'duration_s'.
+        """
         return {
             'rows_logged': self.row_count,
             'filepath': self.filepath,
