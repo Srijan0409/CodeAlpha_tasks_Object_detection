@@ -2,20 +2,18 @@
 Streamlit Web Application for Real-Time Object Detection and Tracking.
 """
 
-import streamlit as st
-import cv2
-import numpy as np
-import time
-from PIL import Image
 import tempfile
+import time
 from collections import defaultdict, deque
+
+import cv2
 import plotly.graph_objects as go
-import plotly.express as px
-import pandas as pd
+import streamlit as st
+from PIL import Image
 
 from core.detector import Detector
 from core.tracker import CentroidTracker
-from core.utils import draw_detections, draw_fps, draw_stats, calculate_fps
+from core.utils import calculate_fps, draw_detections, draw_fps, draw_stats
 
 # 2. PAGE CONFIG
 st.set_page_config(page_title="Object Detection & Tracking", layout="wide", page_icon="🎯")
