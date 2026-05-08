@@ -1,18 +1,21 @@
-import cv2
-import time
-import os
 import datetime
+import os
+import time
 from collections import defaultdict
 
-from core.detector import Detector
-from core.tracker import CentroidTracker
-from core.utils import draw_detections, draw_fps, draw_stats, calculate_fps, draw_trails
-from core.config import CFG
+import cv2
+
 from core.camera_stream import CameraStream
-from core.zone_manager import ZoneManager
-from core.voice_alert import VoiceAlert
+from core.config import CFG
 from core.detection_logger import DetectionLogger
+from core.detector import Detector
 from core.heatmap import DetectionHeatmap
+from core.tracker import CentroidTracker
+from core.utils import (calculate_fps, draw_detections, draw_fps, draw_stats,
+                        draw_trails)
+from core.voice_alert import VoiceAlert
+from core.zone_manager import ZoneManager
+
 
 def save_screenshot(frame):
     """
