@@ -1,4 +1,4 @@
-# Real-Time Object Detection and Tracking System
+# Real-Time Object Detection and Tracking Systems
 
 A robust, real-time object detection and tracking system designed for both live webcam feeds and prerecorded video files. This project leverages state-of-the-art deep learning architectures and custom tracking algorithms to provide accurate bounding boxes, continuous object identity tracking, and comprehensive live analytics including zone intrusions and activity heatmaps.
 
