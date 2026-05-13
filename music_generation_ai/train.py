@@ -97,7 +97,7 @@ def train_network():
     monitor_callback = TrainingMonitor(model_path)
     
     print("\nStarting training for 100 epochs...")
-    model.fit(
+    history = model.fit(
         network_input, 
         network_output, 
         epochs=100, 
@@ -109,6 +109,19 @@ def train_network():
     # Save the final model
     model.save(model_path)
     print(f"\nTraining complete! Final model saved to {model_path}")
+    
+    # Save loss history to loss_history.csv
+    loss_csv_path = os.path.join(base_dir, "loss_history.csv")
+    try:
+        import csv
+        with open(loss_csv_path, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Epoch", "Loss"])
+            for epoch_idx, loss_val in enumerate(history.history['loss']):
+                writer.writerow([epoch_idx + 1, loss_val])
+        print(f"Saved loss history to {loss_csv_path}")
+    except Exception as e:
+        print(f"Error saving loss history: {e}")
 
 if __name__ == '__main__':
     train_network()
