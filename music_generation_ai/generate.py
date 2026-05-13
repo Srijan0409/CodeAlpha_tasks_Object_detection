@@ -5,12 +5,18 @@ import tensorflow as tf
 from music21 import instrument, note, stream, chord
 
 # Import our custom network builder
-from model import create_network 
+from model import create_network
+
+# Temperature / creativity control (default value: 1.0)
+# Low temperature (0.5) = more predictable music
+# High temperature (1.5) = more creative/random music
+TEMPERATURE = 1.0
 
 def generate_music():
     """ 
     Generate a new music sequence from the trained neural network.
     """
+    print(f"Starting music generation with TEMPERATURE = {TEMPERATURE}")
     base_dir = os.path.dirname(os.path.abspath(__file__))
     notes_file = os.path.join(base_dir, "notes.pkl")
     model_path = os.path.join(base_dir, "music_model.h5")
@@ -76,8 +82,12 @@ def generate_music():
         # Predict the next note
         prediction = model.predict(prediction_input, verbose=0)
         
-        # Get the index with highest probability
-        index = np.argmax(prediction)
+        # Apply temperature sampling instead of greedy np.argmax
+        prediction = prediction[0] / TEMPERATURE
+        prediction = prediction - np.max(prediction) # For numerical stability
+        prediction = np.exp(prediction) / np.sum(np.exp(prediction))
+        prediction = prediction / np.sum(prediction) # Ensure probabilities sum precisely to 1
+        index = np.random.choice(len(prediction), p=prediction)
         
         # Map predicted integer back to note/chord string
         result = int_to_note[index]
@@ -132,6 +142,21 @@ def create_midi(prediction_output, base_dir):
     midi_stream.write('midi', fp=output_file)
     
     print(f"Successfully saved generated music to {output_file}")
+    
+    # Attempt to convert MIDI to WAV audio
+    try:
+        from midi2audio import FluidSynth
+        wav_file = os.path.join(base_dir, "output.wav")
+        print("Attempting to convert output.mid to output.wav using FluidSynth...")
+        fs = FluidSynth()
+        fs.midi_to_audio(output_file, wav_file)
+        print("Audio saved as output.wav")
+    except ImportError:
+        print("Skipping audio conversion: 'midi2audio' library is not installed.")
+        print("To enable MIDI to WAV conversion, install it via: pip install midi2audio")
+    except Exception as e:
+        print(f"Skipping audio conversion: FluidSynth conversion failed ({e}).")
+        print("Note: FluidSynth requires the fluidsynth system executable and a soundfont.")
 
 if __name__ == '__main__':
     generate_music()
