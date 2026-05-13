@@ -5,7 +5,7 @@ import tensorflow as tf
 from music21 import instrument, note, stream, chord
 
 # Import our custom network builder
-from model import create_network
+from model import create_network 
 
 def generate_music():
     """ 
