@@ -17,70 +17,81 @@ st.set_page_config(
 # Deep space navy background, supernova accents, custom CSS slider/pill overrides, star particle animation
 st.markdown("""
 <style>
-/* Global App Background */
-.stApp {
-    background-color: #0d0d1a !important;
-    color: #F5F0E8 !important;
-    font-family: 'Inter', sans-serif !important;
+/* Global App Background & Base Styles */
+.stApp { background: #000014 !important; color: #F5F0E8; }
+[data-testid="stSidebar"] { background: #0e0b1e !important; border-right: 1px solid rgba(255,107,53,0.12); }
+h1,h2,h3 { color: #F5F0E8 !important; }
+
+/* Sliders */
+.stSlider > div > div > div { background: linear-gradient(90deg,#FF6B35,#C850C0) !important; }
+.stSlider [data-testid="stThumbValue"] { color: #FF8C5A !important; }
+
+/* Primary CTA Button Overrides */
+div[data-testid="stButton"] > button {
+  background: linear-gradient(135deg,#FF6B35,#C850C0,#FF6B35) !important;
+  background-size: 200% !important;
+  border: none !important; color: white !important; font-weight: 700 !important;
+  border-radius: 14px !important; padding: 14px 28px !important; font-size: 15px !important;
+  letter-spacing: 0.04em !important; transition: all 0.3s !important;
+  animation: shimmer 3s linear infinite, morphBtn 4s ease infinite !important;
+}
+div[data-testid="stButton"] > button:hover { transform: scale(1.03) !important; filter: brightness(1.1) !important; }
+
+/* Selectbox and Radio */
+.stSelectbox > div, .stRadio > div { color: #8B7FA8 !important; }
+
+/* Metric Cards */
+.stMetric { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.06) !important; border-radius: 14px !important; padding: 16px !important; transition: all 0.3s !important; }
+.stMetric:hover { border-color: rgba(255,107,53,0.35) !important; transform: translateY(-3px) !important; }
+.stMetric label { color: #5c5070 !important; font-size: 10px !important; letter-spacing: 0.06em !important; text-transform: uppercase !important; }
+.stMetric [data-testid="stMetricValue"] { color: #FF8C5A !important; font-size: 22px !important; font-weight: 700 !important; }
+
+/* Download Buttons */
+[data-testid="stDownloadButton"] > button {
+  background: rgba(255,107,53,0.12) !important; border: 1px solid rgba(255,107,53,0.3) !important;
+  color: #FF8C5A !important; border-radius: 10px !important; font-weight: 600 !important;
+  transition: all 0.25s !important;
+}
+[data-testid="stDownloadButton"] > button:hover { transform: translateY(-2px) !important; filter: brightness(1.2) !important; }
+
+/* Existing Animations & Utilities */
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes morphBtn {
+  0%, 100% { border-radius: 14px; }
+  50% { border-radius: 18px; }
+}
+@keyframes pulseWave1 { 0%, 100% { height: 15%; } 50% { height: 85%; } }
+@keyframes pulseWave2 { 0%, 100% { height: 35%; } 50% { height: 100%; } }
+@keyframes pulseWave3 { 0%, 100% { height: 10%; } 50% { height: 65%; } }
+@keyframes pulseWave4 { 0%, 100% { height: 55%; } 50% { height: 95%; } }
+@keyframes pulseWave5 { 0%, 100% { height: 25%; } 50% { height: 75%; } }
+@keyframes twinkle {
+    0% { opacity: 0.15; }
+    50% { opacity: 0.75; }
+    100% { opacity: 0.15; }
 }
 
-/* Sidebar Background styling */
-section[data-testid="stSidebar"] {
-    background-color: #110e1f !important;
-    border-right: 1px solid #1e1535 !important;
-}
-
-/* Custom Card styling classes */
+/* Custom Card styling classes (retained for custom containers) */
 .cosmic-card {
-    background-color: #110e1f;
-    border: 1px solid #1e1535;
+    background-color: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
-
 .tip-box {
-    background-color: #110e1f;
+    background-color: #0e0b1e;
     border: 1px solid #9B59B6;
     border-radius: 8px;
     padding: 15px;
     margin-top: 15px;
     margin-bottom: 15px;
 }
-
-/* Primary CTA Button Overrides */
-button[kind="primary"], div[data-testid="stButton"] > button {
-    background: linear-gradient(135deg, #FF6B35, #C850C0) !important;
-    color: #F5F0E8 !important;
-    border: none !important;
-    border-radius: 8px !important;
-    font-weight: 600 !important;
-    padding: 0.6rem 1.2rem !important;
-    transition: all 0.3s ease !important;
-}
-button[kind="primary"]:hover, div[data-testid="stButton"] > button:hover {
-    opacity: 0.95 !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4) !important;
-}
-button[disabled] {
-    background: #1e1535 !important;
-    color: #4a3d6b !important;
-    border: 1px solid #4a3d6b !important;
-    cursor: not-allowed !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-/* Sliders filled gradient track override */
-div[data-testid="stSliderTickBar"] > div {
-    background: linear-gradient(90deg, #FF6B35, #C850C0) !important;
-}
-
-/* Gradient text utility classes */
 .title-accent {
-    background: linear-gradient(90deg, #FF6B35, #FF9A3C);
+    background: linear-gradient(90deg, #FF6B35, #FF9A3C, #FFD700);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: 800;
@@ -88,7 +99,7 @@ div[data-testid="stSliderTickBar"] > div {
     line-height: 1.2;
 }
 .subtitle-accent {
-    background: linear-gradient(90deg, #C850C0, #9B59B6);
+    background: linear-gradient(90deg, #C850C0, #9B59B6, #6C63FF);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: 700;
@@ -96,7 +107,7 @@ div[data-testid="stSliderTickBar"] > div {
     line-height: 1.2;
 }
 .badge-pill {
-    background-color: #1e1535;
+    background-color: rgba(255,255,255,0.03);
     color: #4DD9AC;
     padding: 4px 14px;
     border-radius: 50px;
@@ -105,41 +116,6 @@ div[data-testid="stSliderTickBar"] > div {
     display: inline-block;
     margin-bottom: 12px;
     border: 1px solid #4DD9AC;
-}
-
-/* Custom horizontal pill radio buttons layout */
-div.row-widget.stRadio > div[role="radiogroup"] {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-div.row-widget.stRadio > div[role="radiogroup"] > label {
-    background-color: #110e1f !important;
-    border: 1px solid #1e1535 !important;
-    padding: 8px 18px !important;
-    border-radius: 20px !important;
-    color: #8B7FA8 !important;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-div.row-widget.stRadio > div[role="radiogroup"] > label div {
-    color: #F5F0E8 !important;
-    font-weight: 500 !important;
-}
-
-/* Keyframe animations for output waveforms */
-@keyframes pulseWave1 { 0%, 100% { height: 15%; } 50% { height: 85%; } }
-@keyframes pulseWave2 { 0%, 100% { height: 35%; } 50% { height: 100%; } }
-@keyframes pulseWave3 { 0%, 100% { height: 10%; } 50% { height: 65%; } }
-@keyframes pulseWave4 { 0%, 100% { height: 55%; } 50% { height: 95%; } }
-@keyframes pulseWave5 { 0%, 100% { height: 25%; } 50% { height: 75%; } }
-
-/* Star particles animation */
-@keyframes twinkle {
-    0% { opacity: 0.15; }
-    50% { opacity: 0.75; }
-    100% { opacity: 0.15; }
 }
 .star-particles {
     position: fixed;
@@ -158,8 +134,6 @@ div.row-widget.stRadio > div[role="radiogroup"] > label div {
     animation: twinkle 6s infinite;
     opacity: 0.35;
 }
-
-/* Descriptive Text utilities */
 .secondary-text {
     color: #8B7FA8 !important;
     font-size: 0.95rem;
@@ -284,26 +258,11 @@ if page_selection == "✦ Generate":
     # Row 2: 3 stat cards side by side
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown(f"""
-        <div class="cosmic-card" style="text-align: center;">
-            <p style="color: #8B7FA8; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Total Notes Generated</p>
-            <p style="color: #FF6B35; font-size: 2rem; font-weight: 800; margin: 0;">{st.session_state.total_notes_generated}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Total Notes Generated", st.session_state.total_notes_generated)
     with col2:
-        st.markdown(f"""
-        <div class="cosmic-card" style="text-align: center;">
-            <p style="color: #8B7FA8; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Current Creativity Level</p>
-            <p style="color: #C850C0; font-size: 2rem; font-weight: 800; margin: 0;">{creat_level}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Current Creativity Level", creat_level)
     with col3:
-        st.markdown(f"""
-        <div class="cosmic-card" style="text-align: center;">
-            <p style="color: #8B7FA8; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Estimated Last Track Duration</p>
-            <p style="color: #4DD9AC; font-size: 2rem; font-weight: 800; margin: 0;">{st.session_state.last_track_duration}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Estimated Last Track Duration", st.session_state.last_track_duration)
         
     # Row 3: Compose Settings card
     st.markdown("### ✦ Compose Settings")
@@ -504,26 +463,11 @@ elif page_selection == "✦ Training Monitor":
                 
                 t_col1, t_col2, t_col3 = st.columns(3)
                 with t_col1:
-                    st.markdown(f"""
-                    <div class="cosmic-card" style="text-align: center;">
-                        <p style="color: #8B7FA8; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Epochs Trained</p>
-                        <p style="color: #FF6B35; font-size: 2rem; font-weight: 800; margin: 0;">{total_epochs}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.metric("Epochs Trained", total_epochs)
                 with t_col2:
-                    st.markdown(f"""
-                    <div class="cosmic-card" style="text-align: center;">
-                        <p style="color: #8B7FA8; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Optimal Convergence Loss</p>
-                        <p style="color: #4DD9AC; font-size: 2rem; font-weight: 800; margin: 0;">{best_loss:.4f}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.metric("Optimal Convergence Loss", f"{best_loss:.4f}")
                 with t_col3:
-                    st.markdown(f"""
-                    <div class="cosmic-card" style="text-align: center;">
-                        <p style="color: #8B7FA8; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px;">Final Terminal Loss</p>
-                        <p style="color: #FF9A3C; font-size: 2rem; font-weight: 800; margin: 0;">{last_loss:.4f}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.metric("Final Terminal Loss", f"{last_loss:.4f}")
                     
                 st.markdown("### ✦ Optimization Loss Lifecycle")
                 st.markdown('<p class="secondary-text" style="margin-top: -10px; margin-bottom: 20px;">A descending trajectory confirms standard pattern learning across preprocessed sequence input streams.</p>', unsafe_allow_html=True)
