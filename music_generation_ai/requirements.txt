@@ -1,6 +1,7 @@
 music21
 tensorflow
 numpy
-pickle5
 matplotlib
 midi2audio
+streamlit
+pandas
