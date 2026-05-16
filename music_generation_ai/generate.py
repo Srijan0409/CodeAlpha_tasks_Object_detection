@@ -2,6 +2,7 @@ import os
 import pickle
 import numpy as np
 import tensorflow as tf
+import time
 from music21 import instrument, note, stream, chord
 
 # Import our custom network builder
@@ -23,15 +24,11 @@ def generate_music():
     model_path = os.path.join(base_dir, "music_model.h5")
     
     # Gracefully handle missing files
-    if not os.path.exists(notes_file):
-        print(f"Error: {notes_file} not found.")
-        print("Please run preprocess.py first to extract notes.")
-        return
-        
-    if not os.path.exists(model_path):
-        print(f"Error: {model_path} not found.")
-        print("Please run train.py first to train the model.")
-        return
+    if not os.path.exists(notes_file) or not os.path.exists(model_path):
+        print(f"Error: Required files not found.")
+        if not os.path.exists(notes_file): print(" - notes.pkl is missing. Please run preprocess.py first.")
+        if not os.path.exists(model_path): print(" - music_model.h5 is missing. Please run train.py first.")
+        return 0
         
     print(f"Loading notes from {notes_file}...")
     with open(notes_file, 'rb') as filepath:
@@ -63,7 +60,7 @@ def generate_music():
     if not network_input:
         print("Error: Not enough notes in notes.pkl to create a sequence of length 100.")
         print("Please provide more MIDI files for preprocessing.")
-        return
+        return 0
         
     # Pick a random starting sequence from the training data
     start_index = np.random.randint(0, len(network_input)-1)
@@ -103,6 +100,11 @@ def generate_music():
             
     print("Generation complete. Converting sequence to MIDI file...")
     create_midi(prediction_output, base_dir)
+    
+    # Calculate estimated duration (0.5 quarter notes per generated note @ 120bpm = 0.25 seconds per note)
+    estimated_minutes = round((NOTE_COUNT * 0.25) / 60, 2)
+    print(f"\noutput.mid saved — {NOTE_COUNT} notes generated (~{estimated_minutes} minutes of music)")
+    return NOTE_COUNT
 
 def create_midi(prediction_output, base_dir):
     """ 
@@ -160,4 +162,10 @@ def create_midi(prediction_output, base_dir):
         print("Note: FluidSynth requires the fluidsynth system executable and a soundfont.")
 
 if __name__ == '__main__':
-    generate_music()
+    try:
+        start_time = time.time()
+        generate_music()
+        elapsed = int(time.time() - start_time)
+        print(f"Completed in {elapsed // 60} minutes {elapsed % 60} seconds")
+    except Exception as e:
+        print(f"Something went wrong: {e}. Please check the README for help.")
