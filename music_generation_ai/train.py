@@ -2,6 +2,7 @@ import os
 import pickle
 import numpy as np
 import tensorflow as tf
+import time
 from tensorflow.keras.utils import to_categorical
 
 # Import our custom network builder
@@ -52,8 +53,9 @@ class TrainingMonitor(tf.keras.callbacks.Callback):
         self.model_path = model_path
 
     def on_epoch_end(self, epoch, logs=None):
-        # Print training loss after each epoch
-        print(f"\nEpoch {epoch + 1} completed. Loss: {logs.get('loss'):.4f}")
+        # Print clean progress indicator
+        loss = logs.get('loss')
+        print(f"Epoch {epoch + 1}/100 | Loss: {loss:.4f}")
         
         # Save a checkpoint after every 10 epochs
         if (epoch + 1) % 10 == 0:
@@ -70,8 +72,7 @@ def train_network():
     
     # Gracefully handle file-not-found
     if not os.path.exists(notes_file):
-        print(f"Error: {notes_file} not found.")
-        print("Please run preprocess.py first to extract notes from MIDI files.")
+        print("Run preprocess.py first")
         return
         
     print(f"Loading notes from {notes_file}...")
@@ -108,7 +109,8 @@ def train_network():
     
     # Save the final model
     model.save(model_path)
-    print(f"\nTraining complete! Final model saved to {model_path}")
+    best_loss = min(history.history['loss'])
+    print(f"\nModel saved to music_model.h5 — best loss: {best_loss:.4f}")
     
     # Save loss history to loss_history.csv
     loss_csv_path = os.path.join(base_dir, "loss_history.csv")
@@ -124,4 +126,10 @@ def train_network():
         print(f"Error saving loss history: {e}")
 
 if __name__ == '__main__':
-    train_network()
+    try:
+        start_time = time.time()
+        train_network()
+        elapsed = int(time.time() - start_time)
+        print(f"Completed in {elapsed // 60} minutes {elapsed % 60} seconds")
+    except Exception as e:
+        print(f"Something went wrong: {e}. Please check the README for help.")
