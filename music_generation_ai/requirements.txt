@@ -5,3 +5,4 @@ matplotlib
 midi2audio
 streamlit
 pandas
+tqdm
