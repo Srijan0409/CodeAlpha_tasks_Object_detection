@@ -1,6 +1,8 @@
 import os
 import glob
 import pickle
+import time
+from tqdm import tqdm
 from music21 import converter, instrument, note, chord
 
 def get_notes():
@@ -31,8 +33,7 @@ def get_notes():
 
     print(f"Found {len(files)} MIDI files. Starting preprocessing...")
     
-    for file in files:
-        print(f"Parsing {os.path.basename(file)}...")
+    for file in tqdm(files, desc="Parsing MIDI files"):
         try:
             # Parse the MIDI file into a music21 stream
             midi = converter.parse(file)
@@ -56,7 +57,7 @@ def get_notes():
                     notes.append('.'.join(str(n) for n in element.normalOrder))
                     
         except Exception as e:
-            print(f"Error parsing {file}: {e}")
+            print(f"\nError parsing {file}: {e}")
             
     if not notes:
         print("No valid notes or chords could be extracted from the provided files.")
@@ -73,7 +74,13 @@ def get_notes():
     with open(notes_file, 'wb') as filepath:
         pickle.dump(notes, filepath)
         
-    print(f"Successfully saved parsed notes to {notes_file}")
+    print(f"\nnotes.pkl saved — {len(unique_notes)} unique notes found across {len(files)} files")
 
 if __name__ == '__main__':
-    get_notes()
+    try:
+        start_time = time.time()
+        get_notes()
+        elapsed = int(time.time() - start_time)
+        print(f"Completed in {elapsed // 60} minutes {elapsed % 60} seconds")
+    except Exception as e:
+        print(f"Something went wrong: {e}. Please check the README for help.")
