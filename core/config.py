@@ -67,6 +67,13 @@ class Config:
         assert 0.0 < self.confidence <= 1.0, "confidence_threshold must be between 0 and 1"
         assert self.skip_frames >= 1, "skip_frames must be at least 1"
         assert self.max_disappeared > 0, "max_disappeared must be positive"
+        assert self.distance_threshold > 0, "distance_threshold must be positive"
+        assert self.trail_length >= 1, "trail_length must be at least 1"
+        assert self.auto_save_threshold >= 1, "auto_save_threshold must be at least 1"
+        assert self.voice_cooldown >= 0, "voice_cooldown_seconds must be non-negative"
+        assert len(self.living_color) == 3 and all(0 <= c <= 255 for c in self.living_color), "living_color_bgr must be a BGR tuple of 3 integers in range 0-255"
+        assert len(self.nonliving_color) == 3 and all(0 <= c <= 255 for c in self.nonliving_color), "nonliving_color_bgr must be a BGR tuple of 3 integers in range 0-255"
+        assert len(self.label_color) == 3 and all(0 <= c <= 255 for c in self.label_color), "label_text_color must be a BGR tuple of 3 integers in range 0-255"
         print("Config loaded and validated successfully:")
         for key, value in self.__dict__.items():
             print(f"  {key}: {value}")
