@@ -44,13 +44,14 @@ class DetectionLogger:
         self._file.flush()
         
         self.row_count = 0
+        self.last_flush_row_count = 0
         self.session_start = time.time()
         print(f"Detection log started: {self.filepath}")
     
     def log_frame(self, frame_num: int, tracked_objects: Dict[int, Any], id_to_class: Dict[int, str], id_to_conf: Dict[int, float], id_to_living: Dict[int, bool]) -> None:
         """
         Logs all tracked objects from a single frame to the CSV file.
-        
+         
         Args:
             frame_num (int): The sequential number of the current frame.
             tracked_objects (Dict[int, Any]): Dictionary mapping tracking IDs to (centroid_x, centroid_y, bounding_box).
@@ -81,8 +82,9 @@ class DetectionLogger:
             self.row_count += 1
         
         # Flush every 100 rows to prevent data loss on crash
-        if self.row_count % 100 == 0:
+        if self.row_count - self.last_flush_row_count >= 100:
             self._file.flush()
+            self.last_flush_row_count = self.row_count
     
     def close(self) -> None:
         """
