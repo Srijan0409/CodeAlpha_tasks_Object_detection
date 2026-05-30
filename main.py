@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import argparse
 from collections import defaultdict
 
 import cv2
@@ -27,7 +28,7 @@ def save_screenshot(frame):
     Returns:
         str: The filepath of the saved screenshot.
     """
-    filepath = datetime.datetime.now().strftime("output/captures/frame_%H%M%S_%d%b%y.png")
+    filepath = datetime.datetime.now().strftime("captures/frame_%H%M%S_%d%b%y.png")
     cv2.imwrite(filepath, frame)
     print(f"Screenshot saved: {filepath}")
     return filepath
@@ -43,7 +44,7 @@ def start_recording(frame, fps):
     Returns:
         cv2.VideoWriter: The video writer object, or None if initialization fails.
     """
-    filename = datetime.datetime.now().strftime("output/clips/clip_%H%M%S_%d%b%y.mp4")
+    filename = datetime.datetime.now().strftime("clips/clip_%H%M%S_%d%b%y.mp4")
     try:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         clip_fps = max(10.0, float(fps))
@@ -55,11 +56,25 @@ def start_recording(frame, fps):
         return None
 
 def main():
-    # 2. SETUP before the main loop starts
-    os.makedirs("output/captures", exist_ok=True)
-    os.makedirs("output/clips", exist_ok=True)
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Object Detection and Tracking")
+    parser.add_argument("--source", type=str, default="0", help="Video source (0 for webcam, or path to video file)")
+    parser.add_argument("--save", action="store_true", help="Auto-record session to clips/ on start")
+    args = parser.parse_args()
+    
+    # Try parsing source as int (e.g. webcam index 0)
+    try:
+        source = int(args.source)
+    except ValueError:
+        source = args.source
 
-    is_recording = False
+    # 2. SETUP before the main loop starts - Auto-create directories
+    os.makedirs("captures", exist_ok=True)
+    os.makedirs("clips", exist_ok=True)
+    os.makedirs("logs", exist_ok=True)
+    os.makedirs("screenshots", exist_ok=True)
+
+    is_recording = args.save
     clip_writer = None
     last_auto_save_count = 0
     AUTO_SAVE_THRESHOLD = CFG.auto_save_threshold  # auto-save when this many objects detected simultaneously
@@ -69,7 +84,7 @@ def main():
     print("Z = zone mode | Draw zones by clicking on the video window")
     print(f"Auto-save triggers at {AUTO_SAVE_THRESHOLD}+ simultaneous objects")
     skip_frames = getattr(CFG, 'skip_frames', 2)
-    print(f"Frame skip: {skip_frames} \u2014 YOLO runs every {skip_frames} frames")
+    print(f"Frame skip: {skip_frames} — YOLO runs every {skip_frames} frames")
     print("Press +/- to adjust frame skip live")
     print("H = toggle heatmap | C = clear heatmap")
 
@@ -77,9 +92,9 @@ def main():
     tracker = CentroidTracker()
     zone_mgr = ZoneManager()
     voice = VoiceAlert(enabled=CFG.voice_enabled, cooldown_seconds=CFG.voice_cooldown)
-    print("Voice alerts: ON \u2014 press V to toggle" if CFG.voice_enabled else "Voice alerts: OFF \u2014 press V to toggle")
+    print("Voice alerts: ON — press V to toggle" if CFG.voice_enabled else "Voice alerts: OFF — press V to toggle")
     
-    logger = DetectionLogger(output_dir="output/logs")
+    logger = DetectionLogger(output_dir="logs")
     print(f"Logging detections to: {logger.filepath}")
     print("Press L to see log stats")
 
@@ -87,11 +102,11 @@ def main():
     cv2.setMouseCallback('Object Detection & Tracking', zone_mgr.handle_mouse_click)
 
     try:
-        stream = CameraStream(source=CFG.allowed_source).start()
+        stream = CameraStream(source=source).start()
         w, h = stream.get_resolution()
         heatmap = DetectionHeatmap(frame_height=h, frame_width=w, decay=0.998)
         print(f"Resolution: {w}x{h}")
-        print(f"Threaded capture active \u2014 source FPS: {stream.get_source_fps():.0f}")
+        print(f"Threaded capture active — source FPS: {stream.get_source_fps():.0f}")
     except RuntimeError as e:
         print(f"Camera error: {e}")
         return
@@ -121,7 +136,7 @@ def main():
                 last_detections = detector.detect(frame)
                 detection_time_ms = (time.time() - t_start) * 1000
             
-            # Always update tracker \u2014 even on skipped frames
+            # Always update tracker — even on skipped frames
             # Tracker uses Euclidean distance to keep IDs stable between YOLO frames
             tracked_objects = tracker.update(last_detections)
 
@@ -174,7 +189,7 @@ def main():
                 frame = heatmap.render(frame, alpha=0.45)
             if show_trails:
                 frame = draw_trails(frame, tracker, tracked_objects, id_to_living)
-            draw_detections(frame, tracked_objects, id_to_class, id_to_conf, id_to_living)
+            frame = draw_detections(frame, tracked_objects, id_to_class, id_to_conf, id_to_living)
             
             frame = zone_mgr.draw_zones(frame)
             frame = zone_mgr.draw_in_progress_zone(frame)
@@ -187,18 +202,21 @@ def main():
             draw_stats(frame, living_counts, nonliving_counts, current_fps, session_seconds, detection_time_ms, skip_frames)
             
             current_fps, prev_time = calculate_fps(prev_time)
-            draw_fps(frame, current_fps)
+            frame = draw_fps(frame, current_fps)
             
             if frame_count % 300 == 0:
                 effective_det_fps = current_fps / skip_frames
                 print(f"Frame {frame_count} | Display FPS: {current_fps:.1f} | Detection FPS: {effective_det_fps:.1f} | Det latency: {detection_time_ms:.0f}ms")
 
-            # 6. INSIDE THE MAIN LOOP — write to clip if recording
-            if is_recording and clip_writer is not None:
-                clip_writer.write(frame)
-                # Draw a small red dot and "REC" text on frame
-                cv2.circle(frame, (30, 30), 10, (0, 0, 255), -1)
-                cv2.putText(frame, "REC", (50, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            # 6. INSIDE THE MAIN LOOP — write to clip if recording (auto-initialize if --save used)
+            if is_recording:
+                if clip_writer is None:
+                    clip_writer = start_recording(frame, current_fps if current_fps > 0 else 20.0)
+                if clip_writer is not None:
+                    clip_writer.write(frame)
+                    # Draw a small red dot and "REC" text on frame
+                    cv2.circle(frame, (30, 30), 10, (0, 0, 255), -1)
+                    cv2.putText(frame, "REC", (50, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
             cv2.imshow('Object Detection & Tracking', frame)
 
@@ -236,7 +254,8 @@ def main():
                     is_recording = True
                     print("Recording started — press R again to stop")
                 else:
-                    clip_writer.release()
+                    if clip_writer is not None:
+                        clip_writer.release()
                     clip_writer = None
                     is_recording = False
                     print("Recording stopped and saved")
