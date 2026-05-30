@@ -12,10 +12,10 @@ from ultralytics import YOLO
 from core.config import CFG
 
 # New - detect everything, classify as living or non-living
-LIVING_CLASSES = [
+LIVING_CLASSES = {
     'person', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
     'elephant', 'bear', 'zebra', 'giraffe'
-]
+}
 
 class Detector:
     """
