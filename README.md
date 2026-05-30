@@ -88,21 +88,25 @@ This project demonstrates practical applications of several fundamental machine 
 object_detection_tracking/
 ├── app.py                  (Streamlit web dashboard)
 ├── main.py                 (OpenCV terminal mode entry point)
-├── detector.py             (YOLOv8 detection class)
-├── tracker.py              (Centroid tracker)
-├── utils.py                (Drawing and HUD utilities)
-├── zone_manager.py         (ROI zone detection and alerts)
-├── heatmap.py              (Detection heatmap accumulator)
-├── voice_alert.py          (pyttsx3 text-to-speech alerts)
-├── camera_stream.py        (Threaded video capture)
-├── detection_logger.py     (CSV session logger)
-├── config.py               (settings.yaml loader and validator)
 ├── settings.yaml           (all configurable parameters)
 ├── requirements.txt
 ├── README.md
+├── .gitignore
+├── core/                   (Core backend modules)
+│   ├── __init__.py
+│   ├── camera_stream.py    (Threaded video capture wrapper)
+│   ├── config.py           (settings.yaml configuration loader)
+│   ├── detection_logger.py (CSV session logging class)
+│   ├── detector.py         (YOLOv8 wrapper)
+│   ├── heatmap.py          (Spatial frequency density accumulator)
+│   ├── tracker.py          (Centroid object tracker)
+│   ├── utils.py            (HUD panel & visualization utilities)
+│   ├── voice_alert.py      (Threaded text-to-speech announcements)
+│   └── zone_manager.py     (Polygonal ROI zone management)
 ├── captures/               (auto-created — saved screenshots)
 ├── clips/                  (auto-created — saved recordings)
-└── logs/                   (auto-created — CSV detection logs)
+├── logs/                   (auto-created — CSV detection logs)
+└── screenshots/            (saved presentation screenshots)
 ```
 
 The application is built with a highly modular architecture that separates the neural network inference from the visualization and UI components. The `detector.py` file acts as a standalone wrapper for YOLOv8, ensuring that any future model upgrades won't break the downstream logic. System configuration is fully abstracted into `settings.yaml`, allowing parameters to be tuned dynamically at startup. By using `camera_stream.py` to move frame reading into a background thread, the system guarantees that the main application loop remains unblocked and performs at the highest possible framerate.
@@ -354,9 +358,9 @@ The system operates as a continuous, linear pipeline optimized for speed. First,
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-**Author:** [Srijan Sahu]  
-**Institution:** [Shri Shankracharya Technical Campus, Bhilai ]  
+**Author:** Srijan Sahu  
+**Institution:** Intern Candidate  
 **Year:** 2026  
 
-Built as part of the AI internship program, May 2026.  
-[GitHub](https://github.com/Srijan0409) | [LinkedIn](https://www.linkedin.com/in/srijan-sahu-137078288/)
+Built as part of the AIML internship program, May 2026.  
+[GitHub](https://github.com/srijansahu) | [LinkedIn](https://linkedin.com/in/srijan-sahu)
