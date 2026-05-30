@@ -2,6 +2,7 @@
 Streamlit Web Application for Real-Time Object Detection and Tracking.
 """
 
+import os
 import tempfile
 import time
 from collections import defaultdict, deque
@@ -9,13 +10,20 @@ from collections import defaultdict, deque
 import cv2
 import plotly.graph_objects as go
 import streamlit as st
-from PIL import Image
 
+# 1. AUTO-CREATE REQUIRED RUNTIME DIRECTORIES
+os.makedirs("captures", exist_ok=True)
+os.makedirs("clips", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
+os.makedirs("screenshots", exist_ok=True)
+
+from core.camera_stream import CameraStream
+from core.config import CFG
 from core.detector import Detector
 from core.tracker import CentroidTracker
-from core.utils import calculate_fps, draw_detections, draw_fps, draw_stats
+from core.utils import calculate_fps, draw_detections, draw_fps, draw_stats, draw_trails
 
-# 2. PAGE CONFIG
+# 2. PAGE CONFIG - MUST BE FIRST STREAMLIT CALL
 st.set_page_config(page_title="Object Detection & Tracking", layout="wide", page_icon="🎯")
 
 st.markdown("""
@@ -45,7 +53,8 @@ COCO_CLASSES = [
 st.sidebar.title("Object Detection & Tracking")
 st.sidebar.markdown("**Living = Red | Non-living = Gray**")
 
-conf_threshold = st.sidebar.slider("Confidence threshold", min_value=0.1, max_value=1.0, value=0.5, step=0.05)
+conf_threshold = st.sidebar.slider("Confidence threshold", min_value=0.1, max_value=1.0, value=CFG.confidence, step=0.05)
+skip_frames = st.sidebar.slider("Frame skip (inference interval)", min_value=1, max_value=5, value=CFG.skip_frames, step=1)
 source_choice = st.sidebar.radio("Input source", options=["Webcam (live)", "Upload a video file"])
 
 uploaded_file = None
@@ -54,7 +63,7 @@ if source_choice == "Upload a video file":
 
 allowed_classes = st.sidebar.multiselect("Filter classes to detect", options=COCO_CLASSES, default=COCO_CLASSES)
 
-show_trails = st.sidebar.toggle("Show trajectory trails", value=True)
+show_trails = st.sidebar.toggle("Show trajectory trails", value=CFG.show_trails)
 show_stats = st.sidebar.toggle("Show stats panel", value=True)
 
 start_btn = st.sidebar.button("Start Detection")
@@ -94,9 +103,11 @@ if start_btn:
             tfile.write(uploaded_file.read())
             source = tfile.name
 
-    cap = cv2.VideoCapture(source)
-    if not cap.isOpened():
-        st.error(f"Error: Could not open video source '{source}'. Please check your webcam connection or file.")
+    # Use CameraStream to process video in a background thread
+    try:
+        stream = CameraStream(source=source).start()
+    except RuntimeError as e:
+        st.error(f"Error: Could not open source. {e}")
         st.stop()
 
     st.toast("✅ Successfully connected to source")
@@ -114,11 +125,11 @@ if start_btn:
     start_time = time.time()
     frame_count = 0
     
-    trajectory_history = defaultdict(list)
     event_log = []
     seen_objects = set()
     class_is_living = {}
     max_simultaneous = 0
+    last_detections = []
     
     st.session_state.count_history = deque(maxlen=60)
     st.session_state.class_counts = defaultdict(int)
@@ -126,25 +137,24 @@ if start_btn:
     st.session_state.nonliving_total = 0
 
     try:
-        while cap.isOpened():
-            ret, frame = cap.read()
+        while stream.is_running():
+            ret, frame = stream.read()
             if not ret:
-                st.toast("🎬 End of video stream.")
-                break
+                time.sleep(0.01)
+                continue
                 
             frame_count += 1
             
-            # Detect objects
-            detections = detector.detect(frame)
-            
-            # Filter by allowed_classes
-            filtered_detections = [d for d in detections if d["class_name"] in allowed_classes]
+            # Skip frames optimization - run YOLO only on designated frames
+            if frame_count % skip_frames == 0 or frame_count == 1:
+                detections = detector.detect(frame)
+                last_detections = [d for d in detections if d["class_name"] in allowed_classes]
 
             # Helper to map bboxes back
-            bbox_map = {tuple(d["bbox"]): (d["class_name"], d["confidence"], d["is_living"]) for d in filtered_detections}
+            bbox_map = {tuple(d["bbox"]): (d["class_name"], d["confidence"], d["is_living"]) for d in last_detections}
 
-            # Update tracker
-            tracked_objects = tracker.update(filtered_detections)
+            # Update tracker (always runs for smooth tracking trails)
+            tracked_objects = tracker.update(last_detections)
 
             # Update metadata maps for drawing
             for obj_id, info in tracked_objects.items():
@@ -154,11 +164,6 @@ if start_btn:
                     id_to_class[obj_id] = bbox_map[b][0]
                     id_to_conf[obj_id] = bbox_map[b][1]
                     id_to_living[obj_id] = bbox_map[b][2]
-                
-                if show_trails:
-                    trajectory_history[obj_id].append((cx, cy))
-                    if len(trajectory_history[obj_id]) > 30:
-                        trajectory_history[obj_id].pop(0)
 
                 if obj_id not in seen_objects:
                     seen_objects.add(obj_id)
@@ -197,26 +202,21 @@ if start_btn:
                         nonliving_counts[cls_name] += 1
                         nonliv_count += 1
 
-            # Draw visualizations
-            draw_detections(frame, tracked_objects, id_to_class, id_to_conf, id_to_living)
+            # Draw visualizations (always capture returned frame)
+            frame = draw_detections(frame, tracked_objects, id_to_class, id_to_conf, id_to_living)
             
             if show_trails:
-                for obj_id, pts in trajectory_history.items():
-                    if obj_id in tracked_objects:
-                        color = (0, 0, 220) if id_to_living.get(obj_id, False) else (160, 160, 160)
-                        for i in range(1, len(pts)):
-                            cv2.line(frame, pts[i-1], pts[i], color, 2)
+                frame = draw_trails(frame, tracker, tracked_objects, id_to_living)
             
             fps, prev_time = calculate_fps(prev_time)
-            draw_fps(frame, fps)
+            frame = draw_fps(frame, fps)
             
             if show_stats:
-                draw_stats(frame, living_counts, nonliving_counts)
+                frame = draw_stats(frame, living_counts, nonliving_counts, fps, int(time.time() - start_time), 0, skip_frames)
                 
-            # Convert BGR to RGB
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(frame_rgb)
-            video_placeholder.image(img, use_container_width=True)
+            # Convert BGR to RGB before rendering
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            video_placeholder.image(frame, use_container_width=True)
             
             if frame_count == 1 or frame_count % 30 == 0:
                 metric_total.metric("Total Objects", int(total_objs))
@@ -280,7 +280,7 @@ if start_btn:
                     st.warning(f"Chart update failed: {e}")
 
     finally:
-        cap.release()
+        stream.stop()
         cv2.destroyAllWindows()
         
     # 7. SESSION SUMMARY
