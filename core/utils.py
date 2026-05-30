@@ -59,7 +59,7 @@ def draw_trails(frame: np.ndarray, tracker, tracked_objects: dict, is_living_dic
         print(f"Error in draw_trails: {e}")
         return frame
 
-def draw_rounded_rect(img: np.ndarray, pt1: Tuple[int, int], pt2: Tuple[int, int], color: Tuple[int, int, int], thickness: int, r: int, d: int) -> None:
+def draw_rounded_rect(img: np.ndarray, pt1: Tuple[int, int], pt2: Tuple[int, int], color: Tuple[int, int, int], thickness: int, r: int, d: int) -> np.ndarray:
     """
     Draws a rectangle with smooth, rounded corners on the given image.
     
@@ -89,8 +89,9 @@ def draw_rounded_rect(img: np.ndarray, pt1: Tuple[int, int], pt2: Tuple[int, int
         cv2.ellipse(img, (x2 - r, y2 - r), (r, r), 0, 0, 90, color, thickness)
     except Exception as e:
         print(f"Error in draw_rounded_rect: {e}")
+    return img
 
-def draw_detections(frame: np.ndarray, tracked_objects: Dict[int, Tuple[int, int, List[int]]], class_names: Dict[int, str], confidences: Dict[int, float], is_living_dict: Dict[int, bool]) -> None:
+def draw_detections(frame: np.ndarray, tracked_objects: Dict[int, Tuple[int, int, List[int]]], class_names: Dict[int, str], confidences: Dict[int, float], is_living_dict: Dict[int, bool]) -> np.ndarray:
     """
     Draws bounding boxes, labels, and tracking IDs directly on the frame.
     
@@ -126,6 +127,7 @@ def draw_detections(frame: np.ndarray, tracked_objects: Dict[int, Tuple[int, int
             cv2.putText(frame, label, (x1 + 5, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
     except Exception as e:
         print(f"Error in draw_detections: {e}")
+    return frame
 
 def calculate_fps(prev_time: float) -> Tuple[float, float]:
     """
@@ -145,7 +147,7 @@ def calculate_fps(prev_time: float) -> Tuple[float, float]:
         print(f"Error in calculate_fps: {e}")
         return 0.0, time.time()
 
-def draw_fps(frame: np.ndarray, fps: float) -> None:
+def draw_fps(frame: np.ndarray, fps: float) -> np.ndarray:
     """
     Overlays a basic FPS counter text in the top-left corner of the frame.
     
@@ -157,6 +159,7 @@ def draw_fps(frame: np.ndarray, fps: float) -> None:
         cv2.putText(frame, f"FPS: {int(fps)}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
     except Exception as e:
         print(f"Error in draw_fps: {e}")
+    return frame
 
 def draw_hud_panel(frame: np.ndarray, living_count: int, nonliving_count: int, fps: float, session_seconds: int, detection_time_ms: float = 0, skip_frames: int = 1) -> np.ndarray:
     """
