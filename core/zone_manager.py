@@ -39,7 +39,7 @@ class ZoneManager:
         self.zones.append({
             'id': zone_id,
             'name': name or f"Zone {zone_id}",
-            'points': np.array(points, dtype=np.int32),
+            'points': np.array(points, dtype=np.float32),
             'occupied': False,
             'object_ids_inside': set(),
             'entry_count': 0
@@ -125,17 +125,18 @@ class ZoneManager:
         
         for zone in self.zones:
             pts = zone['points']
+            pts_int = pts.astype(np.int32)
             color = (0, 0, 180) if zone['occupied'] else (0, 180, 0)
             fill_color = (0, 0, 80) if zone['occupied'] else (0, 80, 0)
             
             # Fill polygon semi-transparently
-            cv2.fillPoly(overlay, [pts], fill_color)
+            cv2.fillPoly(overlay, [pts_int], fill_color)
             
             # Border
-            cv2.polylines(frame, [pts], isClosed=True, color=color, thickness=2)
+            cv2.polylines(frame, [pts_int], isClosed=True, color=color, thickness=2)
             
             # Label at centroid of zone
-            M = cv2.moments(pts)
+            M = cv2.moments(pts_int)
             if M['m00'] != 0:
                 cx = int(M['m10'] / M['m00'])
                 cy = int(M['m01'] / M['m00'])
